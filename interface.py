@@ -3,11 +3,14 @@ from __future__ import annotations
 from typing import Callable, TypeAlias
 from dataclasses import dataclass
 
-import rpyc # type: ignore
+from rpyc.utils.server import ThreadedServer
+
+import rpyc  # type: ignore
 
 UserId: TypeAlias = str
 
 Topic: TypeAlias = str
+
 
 # Isso é para ser tipo uma struct
 # Frozen diz que os campos são read-only
@@ -17,9 +20,11 @@ class Content:
     topic: Topic
     data: str
 
+
 FnNotify: TypeAlias = Callable[[list[Content]], None]
 
-class BrokerService(rpyc.Service): # type: ignore
+
+class BrokerService(rpyc.Service):  # type: ignore
 
     # Não é exposed porque só o "admin" tem acesso
     def create_topic(self, id: UserId, topicname: str) -> Topic:
@@ -56,3 +61,7 @@ class BrokerService(rpyc.Service): # type: ignore
         Função responde se `id` não está inscrito no `topic`
         """
         assert False, "TO BE IMPLEMENTED"
+
+
+brokerService = ThreadedServer(BrokerService, port=10000)
+brokerService.start()
