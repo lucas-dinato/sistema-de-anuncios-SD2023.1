@@ -67,7 +67,10 @@ connected_users = {}
 class BrokerService(rpyc.Service):  # type: ignore
 
     # Não é exposed porque só o "admin" tem acesso
-    def create_topic(self, id: UserId, topicname: str) -> Topic:
+    def create_topic(self, id: UserId, topicname: Topic) -> Topic:
+        if id == "admin":
+            anuncios[topicname] = None
+            return topicname
         assert False, "TO BE IMPLEMENTED"
 
     # Handshake
@@ -112,23 +115,45 @@ class BrokerService(rpyc.Service):  # type: ignore
     # Publisher operations
 
     def exposed_publish(self, id: UserId, topic: Topic, data: str) -> bool:
+        if topic in anuncios:
+            anuncios[topic].append(Content(id, topic, data))
+            return True
+        else:
+            if id == "admin":
+                self.create_topic(id, topic)
+                anuncios[topic].append(Content(id, topic, data))
+                return True
+        return False
         """
         Função responde se Anúncio conseguiu ser publicado
-        """
         assert False, "TO BE IMPLEMENTED"
+        """
 
     # Subscriber operations
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
+        if topic in anuncios:
+            for usuario in usuarios:
+                if usuario.id == id:
+                    usuario.inscricoes.append(topic)
+                    return True
+        return False
         """
         Função responde se `id` está inscrito no `topic`
-        """
+       
         assert False, "TO BE IMPLEMENTED"
+         """
 
     def exposed_unsubscribe_to(self, id: UserId, topic: Topic) -> bool:
+        if topic in anuncios:
+            for usuario in usuarios:
+                if usuario.id == id:
+                    usuario.inscricoes.remove(topic)
+                    return True
+        # ToDo Checar boolean retornado
+        return False
         """
         Função responde se `id` não está inscrito no `topic`
-        """
         assert False, "TO BE IMPLEMENTED"
         """
 
