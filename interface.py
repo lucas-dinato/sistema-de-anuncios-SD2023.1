@@ -65,6 +65,9 @@ connected_users = {}
 # connected_users = {}
 
 class BrokerService(rpyc.Service):  # type: ignore
+    # def __init__(self):
+    #     self.users = {}
+    #     self.topics = {}
 
     # Não é exposed porque só o "admin" tem acesso
     def create_topic(self, id: UserId, topicname: Topic) -> Topic:
@@ -74,7 +77,6 @@ class BrokerService(rpyc.Service):  # type: ignore
         assert False, "TO BE IMPLEMENTED"
 
     # Handshake
-
     def exposed_login(self, id: UserId, callback: FnNotify) -> bool:
         if len(id) == 0:
             return False
@@ -103,7 +105,6 @@ class BrokerService(rpyc.Service):  # type: ignore
         # return True
 
     # Query operations
-
     def exposed_list_topics(self) -> list[Topic]:
         topics_titles = []
 
