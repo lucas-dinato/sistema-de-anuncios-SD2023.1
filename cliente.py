@@ -39,11 +39,26 @@ while True:
         topics = system.root.list_topics()
         print(topics)
     elif func == 'publish':
-        anuncio = system.root.publish()
-        print(anuncio)
+        topico = input("Entre com o tópico do anúncio: ")
+        data = input("Agora entre com o conteúdo do anúncio: ")
+        anuncio = system.root.publish("admin", topico, data)
+        if(anuncio):
+            print("Anuncio do tópico " + topico + " publicado com sucesso!")
+        else:
+            print("Tivemos problema ao publicar o seu anúncio! ")
     elif func == 'subscribe':
-        topic = system.root.subscribe_to()
-        print(topic)
+        topico = input("Entre com o tópico em que você quer se inscrever:  ")
+        topic = system.root.subscribe_to("admin", topico)
+        if(topic):
+            print("Inscrinção no tópico " + topico + " realizada com sucesso!")
+        else:
+            print("Falha ao se inscrever no tópico " + topico + ".")
     elif func == 'unsubscribe':
-        topic = system.root.unsubscribe_to()
-        print(topic)
+        topico = input("Entre com o tópico em que você quer se desinscrever:  ")
+        topic = system.root.unsubscribe_to("admin, topico")
+        if (topic):
+            print("Inscrinção cancelada no tópico " + topico + " .")
+        else:
+            print("Falha ao se desinscrever no tópico " + topico + ".")
+    else:
+        print(" Comando inválido, por favor entre com um comando de list, publish, subscribe, unsubscribe ou fim!")

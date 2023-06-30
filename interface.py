@@ -52,8 +52,8 @@ class Usuario:
 
 usuarios = []
 
-usuariomock = Usuario("123", ["Cavalo"], False, ["Cavalo: Cavalo 2.0 lançado"])
-usuarios.append(usuariomock)
+#usuariomock = Usuario("admin", ["Cavalo"], False, ["Cavalo: Cavalo 2.0 lançado"])
+#usuarios.append(usuariomock)
 
 # anuncios = {"123": [{"topic": "cavalo", "autor": "admin", "mensagem": "oi oi oi oi"}]}
 anuncios = {}
@@ -81,15 +81,16 @@ class BrokerService(rpyc.Service):  # type: ignore
         if len(id) == 0:
             return False
         if id in connected_users.values():
+            print("usuario já está logado")
             return False
         else:
             for usuario in usuarios:
                 if usuario.id == id:
                     callback(usuario.anunciosRecebidos)
-        connected_users[self.connection] = id
-        usuario = Usuario(id, [], True, [])
-        usuarios.append(usuario)
-        return True
+            connected_users[self.connection] = id
+            usuario = Usuario(id, [], True, [])
+            usuarios.append(usuario)
+            return True
         # for usuario in usuarios:
         #     if usuario.id == id:
         #         if usuario.status:
@@ -117,12 +118,15 @@ class BrokerService(rpyc.Service):  # type: ignore
 
     def exposed_publish(self, id: UserId, topic: Topic, data: str) -> bool:
         if topic in anuncios:
+            self.publicaTopico(id, topic, data)
             anuncios[topic].append(Content(id, topic, data))
+            print(anuncios)
             return True
         else:
             if id == "admin":
                 self.create_topic(id, topic)
-                anuncios[topic].append(Content(id, topic, data))
+                self.publicaTopico(id, topic, data)
+                print(anuncios)
                 return True
         return False
         """
@@ -130,14 +134,21 @@ class BrokerService(rpyc.Service):  # type: ignore
         assert False, "TO BE IMPLEMENTED"
         """
 
+    def publicaTopico(self, id, topic, data):
+        if anuncios[topic] is None :
+            anuncios[topic] = Content(id, topic, data)
+        else:
+            anuncios[topic].append(Content(id, topic, data))
+
+
     # Subscriber operations
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
         if topic in anuncios:
-            for usuario in usuarios:
-                if usuario.id == id:
-                    usuario.inscricoes.append(topic)
-                    return True
+            print(1)
+            if usuarios[id]:
+                usuarios[id].inscricoes.append(topic)
+                return True
         return False
         """
         Função responde se `id` está inscrito no `topic`
@@ -152,7 +163,7 @@ class BrokerService(rpyc.Service):  # type: ignore
                     usuario.inscricoes.remove(topic)
                     return True
         # ToDo Checar boolean retornado
-        return False
+        return True
         """
         Função responde se `id` não está inscrito no `topic`
         assert False, "TO BE IMPLEMENTED"
