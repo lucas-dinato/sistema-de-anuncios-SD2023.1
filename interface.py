@@ -60,12 +60,9 @@ usuarios = []
 # anuncios = {"cavalo": [{"autor": "admin", "topic": "cavalo", "data": "oiiiiiiii"}]}
 anuncios = {}
 connected_users = {}
-global_callback = {}
 
 
 class BrokerService(rpyc.Service):
-    def __init__(self):
-        self.callbacks = {}
 
     # Não é exposed porque só o "admin" tem acesso
     def create_topic(self, id: UserId, topicname: Topic) -> Topic:
@@ -80,11 +77,6 @@ class BrokerService(rpyc.Service):
             print("usuario já está logado")
             return False
         else:
-            global_callback[id] = callback
-            self.callbacks[id] = callback
-            print('print')
-            print(len(global_callback))
-            print(len(self.callbacks))
             for usuario in usuarios:
                 if usuario.id == id:
                     callback(usuario.anunciosRecebidos)
@@ -130,17 +122,6 @@ class BrokerService(rpyc.Service):
         for usuario in usuarios:
             if content.topic in usuario.inscricoes:
                 usuario.anunciosRecebidos.append(content)
-
-                if usuario.id in connected_users.values():
-                    print('global_callback')
-                    print(len(global_callback))
-                    print('self callback')
-                    print(self.callbacks)
-                    c = self.callbacks[id]
-                    # c = global_callback[usuario.id]
-                    c(usuario.anunciosRecebidos)
-                    usuario.anunciosRecebidos = []
-
         return
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
@@ -167,8 +148,6 @@ class BrokerService(rpyc.Service):
     def on_disconnect(self, conx):
         # Implemente a lógica que deseja executar quando um cliente se desconectar
         print("Conexao encerrada.")
-        #del global_callback[connected_users[conx]]
-        #del self.callback[connectedusers[conx]]
         del connected_users[conx]
 
 
