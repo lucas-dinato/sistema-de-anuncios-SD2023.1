@@ -80,6 +80,11 @@ class BrokerService(rpyc.Service):
             print("usuario já está logado")
             return False
         else:
+            global_callback[id] = callback
+            self.callbacks[id] = callback
+            print('print')
+            print(len(global_callback))
+            print(len(self.callbacks))
             for usuario in usuarios:
                 if usuario.id == id:
                     callback(usuario.anunciosRecebidos)
@@ -166,5 +171,5 @@ class BrokerService(rpyc.Service):
         del connected_users[conx]
 
 
-brokerService = ThreadedServer(BrokerService, port=10000)
+brokerService = ThreadedServer(BrokerService, port=10000, protocol_config={'allow_public_attrs': True})
 brokerService.start()
