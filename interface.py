@@ -161,6 +161,8 @@ class BrokerService(rpyc.Service):
     def on_disconnect(self, conx):
         # Implemente a lógica que deseja executar quando um cliente se desconectar
         print("Conexao encerrada.")
+        #del global_callback[connected_users[conx]]
+        #del self.callback[connectedusers[conx]]
         del connected_users[conx]
 
 
