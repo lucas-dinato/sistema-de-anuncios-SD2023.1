@@ -63,9 +63,9 @@ connected_users = {}
 
 
 class BrokerService(rpyc.Service):
-    def __init__(self):
-        self.usuarios = []
-        self.callbacks = {}
+    usuarios = []
+    callbacks = {}
+    print("Servidor iniciado com sucesso")
 
     # Não é exposed porque só o "admin" tem acesso
     def create_topic(self, id: UserId, topicname: Topic) -> Topic:
@@ -80,14 +80,14 @@ class BrokerService(rpyc.Service):
             print("usuario já está logado")
             return False
         else:
-            for usuario in self.usuarios:
+            for usuario in BrokerService.usuarios:
                 if usuario.id == id:
                     callback(usuario.anunciosRecebidos)
                     usuario.anunciosRecebidos = []
             connected_users[self.connection] = id
             usuario = Usuario(id, [], True, [])
-            self.usuarios.append(usuario)
-            self.callbacks[id] = callback
+            BrokerService.usuarios.append(usuario)
+            BrokerService.callbacks[id] = callback
             return True
 
     def exposed_list_topics(self) -> list[Topic]:
@@ -122,29 +122,30 @@ class BrokerService(rpyc.Service):
         self.notificaUsuarios(novoAnuncio)
 
     def notificaUsuarios(self, content: Content):
-        for usuario in self.usuarios:
+        for usuario in BrokerService.usuarios:
             if content.topic in usuario.inscricoes:
                 # usuario.anunciosRecebidos.append(content)
                 if id in connected_users.values():
-                    c = self.callbacks[id]
-                    c(content)
+                    print('aqui')
+                    c = BrokerService.callbacks[id]
+                    c([content])
                 else:
                     usuario.anunciosRecebidos.append(content)
         return
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
         if topic in anuncios.keys():
-            for usuario in self.usuarios:
-                print(usuario)
+            for usuario in BrokerService.usuarios:
                 usuario.inscricoes.append(topic)
-                c = self.callbacks[usuario.id]
+                print(usuario)
+                c = BrokerService.callbacks[usuario.id]
                 c(anuncios[topic])
                 return True
         return False
 
     def exposed_unsubscribe_to(self, id: UserId, topic: Topic) -> bool:
         if topic in anuncios:
-            for usuario in self.usuarios:
+            for usuario in BrokerService.usuarios:
                 if usuario.id == id:
                     usuario.inscricoes.remove(topic)
                     print(usuario)
@@ -159,6 +160,5 @@ class BrokerService(rpyc.Service):
         print("Conexao encerrada.")
         del connected_users[conx]
 
-
-brokerService = ThreadedServer(BrokerService, port=10000, protocol_config={'allow_public_attrs': True})
-brokerService.start()
+# brokerService = ThreadedServer(BrokerService, port=10000, protocol_config={'allow_public_attrs': True})
+# brokerService.start()

@@ -27,7 +27,7 @@ def login():
         login()
 
 
-system = rpyc.connect('localhost', 10000)
+system = rpyc.connect('localhost', 10000, config={'allow_public_attrs': True})
 login()
 print("\n")
 
