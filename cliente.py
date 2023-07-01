@@ -8,13 +8,15 @@ def exposed_get_id():
 
 
 def callback(contents):
-    print("\nConteúdos:")
+    if len(contents):
+        print("\nNotificações:")
     for content in contents:
-        print(f"{content}\n")
+        print(content)
     return
 
 
 def login():
+    global global_id
     id = input("Digite seu identificador: ")
     retorno = system.root.login(id, callback)
     if retorno:
@@ -41,21 +43,21 @@ while True:
     elif func == 'publish':
         topico = input("Entre com o tópico do anúncio: ")
         data = input("Agora entre com o conteúdo do anúncio: ")
-        anuncio = system.root.publish("admin", topico, data)
+        anuncio = system.root.publish(global_id, topico, data)
         if(anuncio):
             print("Anuncio do tópico " + topico + " publicado com sucesso!")
         else:
             print("Tivemos problema ao publicar o seu anúncio! ")
     elif func == 'subscribe':
         topico = input("Entre com o tópico em que você quer se inscrever:  ")
-        topic = system.root.subscribe_to("admin", topico)
+        topic = system.root.subscribe_to(global_id, topico)
         if(topic):
             print("Inscrinção no tópico " + topico + " realizada com sucesso!")
         else:
             print("Falha ao se inscrever no tópico " + topico + ".")
     elif func == 'unsubscribe':
         topico = input("Entre com o tópico em que você quer se desinscrever:  ")
-        topic = system.root.unsubscribe_to("admin, topico")
+        topic = system.root.unsubscribe_to(global_id, topico)
         if (topic):
             print("Inscrinção cancelada no tópico " + topico + " .")
         else:
