@@ -136,7 +136,8 @@ class BrokerService(rpyc.Service):
                     print(len(global_callback))
                     print('self callback')
                     print(self.callbacks)
-                    c = global_callback[usuario.id]
+                    c = self.callbacks[id]
+                    # c = global_callback[usuario.id]
                     c(usuario.anunciosRecebidos)
                     usuario.anunciosRecebidos = []
 
