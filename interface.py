@@ -60,9 +60,12 @@ usuarios = []
 # anuncios = {"cavalo": [{"autor": "admin", "topic": "cavalo", "data": "oiiiiiiii"}]}
 anuncios = {}
 connected_users = {}
+global_callback = {}
 
 
 class BrokerService(rpyc.Service):
+    def __init__(self):
+        self.callbacks = {}
 
     # Não é exposed porque só o "admin" tem acesso
     def create_topic(self, id: UserId, topicname: Topic) -> Topic:
@@ -123,7 +126,16 @@ class BrokerService(rpyc.Service):
             if content.topic in usuario.inscricoes:
                 usuario.anunciosRecebidos.append(content)
 
-        return False
+                if usuario.id in connected_users.values():
+                    print('global_callback')
+                    print(len(global_callback))
+                    print('self callback')
+                    print(self.callbacks)
+                    c = global_callback[usuario.id]
+                    c(usuario.anunciosRecebidos)
+                    usuario.anunciosRecebidos = []
+
+        return
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
         if topic in anuncios:
