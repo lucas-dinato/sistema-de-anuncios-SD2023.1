@@ -29,6 +29,7 @@ if IS_NEW_PYTHON:
         author: UserId
         topic: Topic
         data: str
+
 elif not TYPE_CHECKING:
     @dataclass(frozen=True)
     class Content:
@@ -49,14 +50,15 @@ class Usuario:
         self.status = status
         self.anunciosRecebidos = anunciosRecebidos
 
+    def __str__(self):
+        return f'Usuario(id={self.id}, inscricoes = {self.inscricoes}, status = {self.status}, anunciosRecebidos = {self.anunciosRecebidos})'
+
 
 # usuariomock = Usuario("admin", ["Cavalo"], False, ["Cavalo: Cavalo 2.0 lançado"])
 usuarios = []
 
 # anuncios = {"cavalo": [{"autor": "admin", "topic": "cavalo", "data": "oiiiiiiii"}]}
 anuncios = {}
-# inscritos = {"Cavalo": ["123"]}
-inscritos = {}
 connected_users = {}
 
 
@@ -94,14 +96,14 @@ class BrokerService(rpyc.Service):
 
     def exposed_publish(self, id: UserId, topic: Topic, data: str) -> bool:
         if topic in anuncios:
-            self.publicaTopico(id, topic, data)
+            self.publicaAnuncio(id, topic, data)
             anuncios[topic].append(Content(id, topic, data))
             print(anuncios)
             return True
         else:
             if id == "admin":
                 self.create_topic(id, topic)
-                self.publicaTopico(id, topic, data)
+                self.publicaAnuncio(id, topic, data)
                 print(anuncios)
                 return True
         return False
