@@ -55,7 +55,7 @@ class Usuario:
 
 
 # usuariomock = Usuario("admin", ["Cavalo"], False, ["Cavalo: Cavalo 2.0 lançado"])
-usuarios = []
+# usuarios = []
 
 # anuncios = {"cavalo": [{"autor": "admin", "topic": "cavalo", "data": "oiiiiiiii"}]}
 anuncios = {}
@@ -63,6 +63,9 @@ connected_users = {}
 
 
 class BrokerService(rpyc.Service):
+    def __init__(self):
+        self.usuarios = []
+        self.callbacks = {}
 
     # Não é exposed porque só o "admin" tem acesso
     def create_topic(self, id: UserId, topicname: Topic) -> Topic:
@@ -77,13 +80,14 @@ class BrokerService(rpyc.Service):
             print("usuario já está logado")
             return False
         else:
-            for usuario in usuarios:
+            for usuario in self.usuarios:
                 if usuario.id == id:
                     callback(usuario.anunciosRecebidos)
                     usuario.anunciosRecebidos = []
             connected_users[self.connection] = id
             usuario = Usuario(id, [], True, [])
-            usuarios.append(usuario)
+            self.usuarios.append(usuario)
+            self.callbacks[id] = callback
             return True
 
     def exposed_list_topics(self) -> list[Topic]:
@@ -97,7 +101,6 @@ class BrokerService(rpyc.Service):
     def exposed_publish(self, id: UserId, topic: Topic, data: str) -> bool:
         if topic in anuncios:
             self.publicaAnuncio(id, topic, data)
-            anuncios[topic].append(Content(id, topic, data))
             print(anuncios)
             return True
         else:
@@ -105,7 +108,7 @@ class BrokerService(rpyc.Service):
                 self.create_topic(id, topic)
                 self.publicaAnuncio(id, topic, data)
                 print(anuncios)
-                return True
+            return True
         return False
         # Função responde se Anúncio conseguiu ser publicado
 
@@ -119,23 +122,29 @@ class BrokerService(rpyc.Service):
         self.notificaUsuarios(novoAnuncio)
 
     def notificaUsuarios(self, content: Content):
-        for usuario in usuarios:
+        for usuario in self.usuarios:
             if content.topic in usuario.inscricoes:
-                usuario.anunciosRecebidos.append(content)
+                # usuario.anunciosRecebidos.append(content)
+                if id in connected_users.values():
+                    c = self.callbacks[id]
+                    c(content)
+                else:
+                    usuario.anunciosRecebidos.append(content)
         return
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
-        if topic in anuncios:
-            for usuario in usuarios:
-                if usuario.id == id:
-                    usuario.inscricoes.append(topic)
-                    print(usuario)
-                    return True
+        if topic in anuncios.keys():
+            for usuario in self.usuarios:
+                print(usuario)
+                usuario.inscricoes.append(topic)
+                c = self.callbacks[usuario.id]
+                c(anuncios[topic])
+                return True
         return False
 
     def exposed_unsubscribe_to(self, id: UserId, topic: Topic) -> bool:
         if topic in anuncios:
-            for usuario in usuarios:
+            for usuario in self.usuarios:
                 if usuario.id == id:
                     usuario.inscricoes.remove(topic)
                     print(usuario)

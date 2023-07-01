@@ -11,7 +11,7 @@ def callback(contents):
     if len(contents):
         print("\nNotificações:")
     for content in contents:
-        print(content)
+        print(f'Autor:{content.author}\nTópico:{content.topic}\nMensagem:{content.data}')
     return
 
 
@@ -44,22 +44,22 @@ while True:
         topico = input("Entre com o tópico do anúncio: ")
         data = input("Agora entre com o conteúdo do anúncio: ")
         anuncio = system.root.publish(global_id, topico, data)
-        if(anuncio):
+        if anuncio:
             print("Anuncio do tópico " + topico + " publicado com sucesso!")
         else:
             print("Tivemos problema ao publicar o seu anúncio! ")
     elif func == 'subscribe':
         topico = input("Entre com o tópico em que você quer se inscrever:  ")
         topic = system.root.subscribe_to(global_id, topico)
-        if(topic):
-            print("Inscrinção no tópico " + topico + " realizada com sucesso!")
+        if topic:
+            print("Inscrição no tópico " + topico + " realizada com sucesso!")
         else:
             print("Falha ao se inscrever no tópico " + topico + ".")
     elif func == 'unsubscribe':
         topico = input("Entre com o tópico em que você quer se desinscrever:  ")
         topic = system.root.unsubscribe_to(global_id, topico)
-        if (topic):
-            print("Inscrinção cancelada no tópico " + topico + " .")
+        if topic:
+            print("Inscrição cancelada no tópico " + topico + " .")
         else:
             print("Falha ao se desinscrever no tópico " + topico + ".")
     else:
