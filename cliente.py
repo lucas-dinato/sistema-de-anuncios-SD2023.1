@@ -8,12 +8,11 @@ def exposed_get_id():
 
 
 def callback(contents):
+    print("oi")
     if len(contents):
         print("\nNotificações:")
     for content in contents:
         print(f'Autor:{content.author}\nTópico:{content.topic}\nMensagem:{content.data}')
-    return
-
 
 def login():
     global global_id
@@ -27,7 +26,7 @@ def login():
         login()
 
 
-system = rpyc.connect('localhost', 10000, config={'allow_public_attrs': True})
+system = rpyc.connect('localhost', 10000)
 login()
 print("\n")
 
@@ -36,8 +35,7 @@ while True:
     if func == 'fim':
         system.close()
         break
-
-    if func == 'list':
+    elif func == 'list':
         topics = system.root.list_topics()
         print(topics)
     elif func == 'publish':

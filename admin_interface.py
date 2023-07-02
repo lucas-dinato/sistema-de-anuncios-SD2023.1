@@ -10,7 +10,7 @@ def menu():
 s = None
 def initServer():
     global s
-    s = ThreadedServer(BrokerService(), port=10000, protocol_config={'allow_public_attrs': True})
+    s = ThreadedServer(BrokerService, port=10000, protocol_config={'allow_public_attrs': True})
     s.start()
 def closeServer():
     global s
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         ipt = input()
         if ipt == "criar":
             topic = input("Insira o nome do topico que deseja criar\n")
-            t = s.service.create_topic(id="", topicname=topic)
+            t = s.service.create_topic(topic)
             if t:
                 print("Tópico criado com sucesso")
         elif ipt == 'fim':

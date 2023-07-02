@@ -13,7 +13,7 @@ else:
 from typing import Callable, TYPE_CHECKING
 from dataclasses import dataclass
 
-from rpyc.utils.server import ThreadedServer
+# from rpyc.utils.server import ThreadedServer
 
 import rpyc  # type: ignore
 
@@ -44,11 +44,12 @@ elif not TYPE_CHECKING:
 
 
 class Usuario:
-    def __init__(self, id, inscricoes, status, anunciosRecebidos):
+    def __init__(self, id:UserId, inscricoes, status, anunciosRecebidos, callback:FnNotify):
         self.id = id
         self.inscricoes = inscricoes
         self.status = status
         self.anunciosRecebidos = anunciosRecebidos
+        self.callback = callback
 
     def __str__(self):
         return f'Usuario(id={self.id}, inscricoes = {self.inscricoes}, status = {self.status}, anunciosRecebidos = {self.anunciosRecebidos})'
@@ -58,25 +59,34 @@ class Usuario:
 # usuarios = []
 
 # anuncios = {"cavalo": [{"autor": "admin", "topic": "cavalo", "data": "oiiiiiiii"}]}
-anuncios = {}
-connected_users = {}
-
+# anuncios = {}
+# connected_users = {}
 
 class BrokerService(rpyc.Service):
+    anuncios = {}
     usuarios = []
-    callbacks = {}
+    connected_users = {}
+
     print("Servidor iniciado com sucesso")
 
+    def on_connect(self, conx):
+        print("Conexao estabelecida.")
+        self.current_connection = conx
+
+    def on_disconnect(self, conx):
+        print("Conexao encerrada.")
+        del BrokerService.connected_users[conx]
+
     # Não é exposed porque só o "admin" tem acesso
-    def create_topic(self, id: UserId, topicname: Topic) -> Topic:
-        anuncios[topicname] = None
+    def create_topic(topicname: Topic) -> Topic:
+        BrokerService.anuncios[topicname] = None
         return topicname
 
     # Handshake
     def exposed_login(self, id: UserId, callback: FnNotify) -> bool:
         if len(id) == 0 or id == 0:
             return False
-        if id in connected_users.values():
+        if id in BrokerService.connected_users.values():
             print("usuario já está logado")
             return False
         else:
@@ -84,40 +94,31 @@ class BrokerService(rpyc.Service):
                 if usuario.id == id:
                     callback(usuario.anunciosRecebidos)
                     usuario.anunciosRecebidos = []
-            connected_users[self.connection] = id
-            usuario = Usuario(id, [], True, [])
+            BrokerService.connected_users[self.current_connection] = id
+            usuario = Usuario(id, [], True, [], rpyc.async_(callback))
             BrokerService.usuarios.append(usuario)
-            BrokerService.callbacks[id] = callback
             return True
 
     def exposed_list_topics(self) -> list[Topic]:
         topics_titles = []
 
-        for content in anuncios:
+        for content in BrokerService.anuncios:
             topics_titles.append(content)
 
         return topics_titles
 
     def exposed_publish(self, id: UserId, topic: Topic, data: str) -> bool:
-        if topic in anuncios:
-            self.publicaAnuncio(id, topic, data)
-            print(anuncios)
-            return True
-        else:
-            if id == "admin":
-                self.create_topic(id, topic)
-                self.publicaAnuncio(id, topic, data)
-                print(anuncios)
+        if topic in BrokerService.anuncios:
+            self.publicaAnuncio(id=id, topic=topic, data=data)
             return True
         return False
-        # Função responde se Anúncio conseguiu ser publicado
 
     def publicaAnuncio(self, id, topic, data):
         novoAnuncio = Content(id, topic, data)
-        if anuncios[topic] is None:
-            anuncios[topic] = [novoAnuncio]
+        if BrokerService.anuncios[topic] is None:
+            BrokerService.anuncios[topic] = [novoAnuncio]
         else:
-            anuncios[topic].append(novoAnuncio)
+            BrokerService.anuncios[topic].append(novoAnuncio)
         # Notificar todos os usuarios
         self.notificaUsuarios(novoAnuncio)
 
@@ -125,40 +126,31 @@ class BrokerService(rpyc.Service):
         for usuario in BrokerService.usuarios:
             if content.topic in usuario.inscricoes:
                 # usuario.anunciosRecebidos.append(content)
-                if id in connected_users.values():
-                    print('aqui')
-                    c = BrokerService.callbacks[id]
-                    c([content])
+                if usuario.id in BrokerService.connected_users.values():
+                    call = usuario.callback
+                    call([content])
                 else:
                     usuario.anunciosRecebidos.append(content)
         return
 
     def exposed_subscribe_to(self, id: UserId, topic: Topic) -> bool:
-        if topic in anuncios.keys():
+        if topic in BrokerService.anuncios.keys():
             for usuario in BrokerService.usuarios:
-                usuario.inscricoes.append(topic)
-                print(usuario)
-                c = BrokerService.callbacks[usuario.id]
-                c(anuncios[topic])
+                if usuario.id == id:
+                    usuario.inscricoes.append(topic)
+                    if BrokerService.anuncios[topic]:
+                        call = usuario.callback
+                        call(BrokerService.anuncios[topic])
                 return True
         return False
 
     def exposed_unsubscribe_to(self, id: UserId, topic: Topic) -> bool:
-        if topic in anuncios:
+        if topic in BrokerService.anuncios:
             for usuario in BrokerService.usuarios:
                 if usuario.id == id:
                     usuario.inscricoes.remove(topic)
                     print(usuario)
         return True
-
-    def on_connect(self, conx):
-        print("Conexao estabelecida.")
-        self.connection = conx
-
-    def on_disconnect(self, conx):
-        # Implemente a lógica que deseja executar quando um cliente se desconectar
-        print("Conexao encerrada.")
-        del connected_users[conx]
 
 # brokerService = ThreadedServer(BrokerService, port=10000, protocol_config={'allow_public_attrs': True})
 # brokerService.start()
