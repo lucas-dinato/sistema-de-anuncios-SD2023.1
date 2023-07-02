@@ -147,7 +147,7 @@ class BrokerService(rpyc.Service):
     def exposed_unsubscribe_to(self, id: UserId, topic: Topic) -> bool:
         if topic in BrokerService.anuncios:
             for usuario in BrokerService.usuarios:
-                if usuario.id == id:
+                if usuario.id == id and topic in usuario.inscricoes:
                     usuario.inscricoes.remove(topic)
                     print(usuario)
         return True
