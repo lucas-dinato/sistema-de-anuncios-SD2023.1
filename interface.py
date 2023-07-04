@@ -55,13 +55,6 @@ class Usuario:
         return f'Usuario(id={self.id}, inscricoes = {self.inscricoes}, status = {self.status}, anunciosRecebidos = {self.anunciosRecebidos})'
 
 
-# usuariomock = Usuario("admin", ["Cavalo"], False, ["Cavalo: Cavalo 2.0 lançado"])
-# usuarios = []
-
-# anuncios = {"cavalo": [{"autor": "admin", "topic": "cavalo", "data": "oiiiiiiii"}]}
-# anuncios = {}
-# connected_users = {}
-
 class BrokerService(rpyc.Service):
     anuncios = {}
     usuarios = []
