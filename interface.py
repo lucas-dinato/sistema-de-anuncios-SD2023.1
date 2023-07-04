@@ -132,9 +132,8 @@ class BrokerService(rpyc.Service):
 
     def notificaUsuarios(self, content: Content):
         for usuario in BrokerService.usuarios:
-            # print('usuario')
-            # print(usuario)
-            if content.topic in usuario.inscricoes:
+            if content.topic in usuario.inscricoes and usuario.id != content.author:
+                print(usuario)
                 if usuario.id in BrokerService.connected_users.values():
                     usuario.callback([content])
                 else:
