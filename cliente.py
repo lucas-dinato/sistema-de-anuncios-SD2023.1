@@ -8,7 +8,6 @@ def exposed_get_id():
 
 
 def callback(contents):
-    print("oi")
     if len(contents):
         print("\nNotificações:")
     for content in contents:
@@ -27,12 +26,14 @@ def login():
 
 
 system = rpyc.connect('localhost', 10000)
+bg = rpyc.BgServingThread(system)
 login()
 print("\n")
 
 while True:
     func = input("Digite uma funcionalidade (list, publish, subscribe, unsubscribe ou 'fim' para terminar): ")
     if func == 'fim':
+        bg.stop()
         system.close()
         break
     elif func == 'list':
