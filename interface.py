@@ -90,13 +90,21 @@ class BrokerService(rpyc.Service):
             print("usuario já está logado")
             return False
         else:
+            novo_usuario = True
+
             for usuario in BrokerService.usuarios:
                 if usuario.id == id:
-                    callback(usuario.anunciosRecebidos)
+                    novo_usuario = False
+                    usuario.callback = rpyc.async_(callback)
+                    usuario.callback(usuario.anunciosRecebidos)
                     usuario.anunciosRecebidos = []
+                    break
+
+            if novo_usuario:
+                usuario = Usuario(id, [], True, [], rpyc.async_(callback))
+                BrokerService.usuarios.append(usuario)
+
             BrokerService.connected_users[self.current_connection] = id
-            usuario = Usuario(id, [], True, [], rpyc.async_(callback))
-            BrokerService.usuarios.append(usuario)
             return True
 
     def exposed_list_topics(self) -> list[Topic]:
@@ -124,11 +132,11 @@ class BrokerService(rpyc.Service):
 
     def notificaUsuarios(self, content: Content):
         for usuario in BrokerService.usuarios:
+            # print('usuario')
+            # print(usuario)
             if content.topic in usuario.inscricoes:
-                # usuario.anunciosRecebidos.append(content)
                 if usuario.id in BrokerService.connected_users.values():
-                    call = usuario.callback
-                    call([content])
+                    usuario.callback([content])
                 else:
                     usuario.anunciosRecebidos.append(content)
         return
@@ -137,11 +145,13 @@ class BrokerService(rpyc.Service):
         if topic in BrokerService.anuncios.keys():
             for usuario in BrokerService.usuarios:
                 if usuario.id == id:
-                    usuario.inscricoes.append(topic)
-                    if BrokerService.anuncios[topic]:
-                        call = usuario.callback
-                        call(BrokerService.anuncios[topic])
-                return True
+                    if topic not in usuario.inscricoes:
+                        usuario.inscricoes.append(topic)
+                        if BrokerService.anuncios[topic]:
+                            call = usuario.callback
+                            call(BrokerService.anuncios[topic])
+                        return True
+                    break
         return False
 
     def exposed_unsubscribe_to(self, id: UserId, topic: Topic) -> bool:
